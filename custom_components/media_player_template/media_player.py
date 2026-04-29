@@ -57,6 +57,7 @@ CONF_CURRENT_SOURCE_TEMPLATE = "current_source_template"
 CONF_CURRENT_VOLUME_TEMPLATE = "current_volume_template"
 CONF_INPUTS = "inputs"
 CONF_MEDIA_ALBUM_ARTIST_TEMPLATE = "media_album_artist_template"
+CONF_MEDIA_CONTENT_ID_TEMPLATE = "media_content_id_template"
 CONF_MEDIA_CONTENT_TYPE_TEMPLATE = "media_content_type_template"
 CONF_MEDIA_DURATION_TEMPLATE = "media_duration_template"
 CONF_MEDIA_EPISODE_TEMPLATE = "media_episode_template"
@@ -101,6 +102,7 @@ MEDIA_PLAYER_SCHEMA = vol.Schema(
         vol.Optional(CONF_ICON_TEMPLATE): cv.template,
         vol.Optional(CONF_INPUTS, default={}): {cv.string: cv.SCRIPT_SCHEMA},
         vol.Optional(CONF_MEDIA_ALBUM_ARTIST_TEMPLATE): cv.template,
+        vol.Optional(CONF_MEDIA_CONTENT_ID_TEMPLATE): cv.template,
         vol.Optional(CONF_MEDIA_CONTENT_TYPE_TEMPLATE): cv.template,
         vol.Optional(CONF_MEDIA_DURATION_TEMPLATE): cv.template,
         vol.Optional(CONF_MEDIA_EPISODE_TEMPLATE): cv.template,
@@ -210,12 +212,12 @@ class MediaPlayerTemplate(TemplateEntity, MediaPlayerEntity):
         self._current_is_muted_template = config.get(CONF_CURRENT_IS_MUTED_TEMPLATE)
         self._current_sound_mode_template = config.get(CONF_CURRENT_SOUND_MODE_TEMPLATE)
         self._album_art_template = config.get(CONF_ALBUM_ART_TEMPLATE)
-        self._media_content_type_template = config.get(CONF_MEDIA_CONTENT_TYPE_TEMPLATE)
         self._media_image_url_template = config.get(CONF_MEDIA_IMAGE_URL_TEMPLATE)
         self._media_episode_template = config.get(CONF_MEDIA_EPISODE_TEMPLATE)
         self._media_season_template = config.get(CONF_MEDIA_SEASON_TEMPLATE)
         self._media_series_title_template = config.get(CONF_MEDIA_SERIES_TITLE_TEMPLATE)
         self._media_album_artist_template = config.get(CONF_MEDIA_ALBUM_ARTIST_TEMPLATE)
+        self._media_content_id_template = config.get(CONF_MEDIA_CONTENT_ID_TEMPLATE)
         self._media_content_type_template = config.get(CONF_MEDIA_CONTENT_TYPE_TEMPLATE)
         self._current_position_template = config.get(CONF_CURRENT_POSITION_TEMPLATE)
         self._media_duration_template = config.get(CONF_MEDIA_DURATION_TEMPLATE)
@@ -306,6 +308,14 @@ class MediaPlayerTemplate(TemplateEntity, MediaPlayerEntity):
                 none_on_template_error=True,
             )
 
+        if self._media_content_id_template is not None:
+            self.add_template_attribute(
+                "_attr_media_content_id",
+                self._media_content_id_template,
+                None,
+                self._update_media_content_id,
+                none_on_template_error=True,
+            )
         if self._media_content_type_template is not None:
             self.add_template_attribute(
                 "_attr_media_content_type",
@@ -520,6 +530,14 @@ class MediaPlayerTemplate(TemplateEntity, MediaPlayerEntity):
                 self.entity_id,
             )
             self._attr_is_volume_muted = None
+
+    @callback
+    def _update_media_content_id(self, result):
+        if isinstance(result, TemplateError) or result is None:
+            self._attr_media_content_id = None
+            return
+
+        self._attr_media_content_id = vol.Coerce(str)(result)
 
     @callback
     def _update_media_content_type(self, result):
